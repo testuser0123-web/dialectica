@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIがレスバするだけ</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f2f5; 
+    --phone-bg: #7494c0;
+    --header: #ffffff;
+    --border: #e0e0e0;
+    --msg-a: #ffffff;
+    --msg-b: #ffffff;
+    --accent: #5c84c1;
+    --text: #1c1e21;
+    --dim: #65676b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+  header {
+    height:56px; background:var(--header); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; flex-shrink:0;
+    padding: 0 20px; text-align: center; color: var(--text);
+    width: 100%; max-width: 600px; margin: 0 auto;
+    z-index: 10;
+  }
+
+  /* ── SETUP ── */
+  #setup {
+    position:fixed; inset:0; z-index:200; background:var(--phone-bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .setup-card {
+    background: white; width: min(400px, 90vw); padding: 2rem; border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  .setup-logo { font-size:1.8rem; font-weight:900; color:var(--accent); text-align: center; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
+  .setup-instruction { font-size: 0.85rem; color: var(--dim); text-align: center; line-height: 1.5; margin-bottom: 0.5rem; }
+  .setup-form { display:flex; flex-direction:column; gap:1.2rem; }
+  .setup-form textarea {
+    padding:1rem; border:1px solid var(--border); border-radius:12px; font-size:0.95rem; 
+    outline:none; resize:none; background:#f8f9fa; transition: border-color 0.2s;
+    min-height: 100px; line-height: 1.6;
+  }
+  .setup-form textarea:focus { border-color: var(--accent); background: white; }
+  .ms-group { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+  .ms-group span { font-size: 0.75rem; color: var(--dim); font-weight: bold; margin-left: 4px; }
+  .ms-select {
+    padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: #f8f9fa;
+    font-size: 0.85rem; cursor: pointer; width: 100%; outline: none;
+  }
+  .ms-select:focus { border-color: var(--accent); background: white; }
+  .start-btn {
+    background:var(--accent); color:white; border:none; padding:0.9rem; border-radius:12px; 
+    font-weight:bold; cursor:pointer; font-size: 1rem; transition: background 0.2s;
+  }
+  .start-btn:hover { background: #4a6fa5; }
+
+  /* ── CHAT AREA ── */
+  #chat-container {
+    flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:20px;
+    scrollbar-width: none;
+    width: 100%; max-width: 600px; margin: 0 auto;
+    background: var(--phone-bg);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+  }
+  #chat-container::-webkit-scrollbar { display:none; }
+
+  .chat-row { display:flex; gap:10px; width:100%; align-items:flex-start; min-width: 0; }
+  
+  .avatar {
+    width:40px; height:40px; border-radius:15px; background:#ddd; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:bold; color:white;
+  }
+  .row-a .avatar { background:#e57373; }
+  .row-b .avatar { background:#64b5f6; }
+  .row-moderator .avatar { background:#90a4ae; }
+
+  .msg-bubble-wrap { display:flex; flex-direction:column; max-width:85%; min-width: 0; flex-shrink: 1; }
+  .speaker-name { font-size:.7rem; color:#444; margin-bottom:4px; margin-left:4px; font-weight:bold; }
+  .bubble {
+    padding:10px 14px; border-radius:15px; position:relative; font-size:.92rem; line-height:1.5;
+    background:white; box-shadow:0 1px 2px rgba(0,0,0,0.1);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .row-a .bubble { border-top-left-radius:2px; }
+  .row-b .bubble { border-top-left-radius:2px; }
+  .row-moderator .bubble { border-top-left-radius:2px; background: #eceff1; }
+
+  .chat-row.row-user { flex-direction: row-reverse; }
+  .row-user .bubble { 
+    background: #95ec69; 
+    border-top-right-radius: 2px; 
+    border-top-left-radius: 15px;
+  }
+  .row-user .speaker-name { text-align: right; margin-right: 4px; margin-left: 0; }
+  .row-user .avatar { background: #4caf50; }
+
+  /* ── FOOTER ── */
+  footer {
+    background:white; padding:10px 15px; display:none; flex-direction:column; gap:10px; flex-shrink:0;
+    width: 100%; max-width: 600px; margin: 0 auto;
+    border: 1px solid var(--border);
+    border-top: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+  footer.visible { display:flex; }
+  .system-msg-row {
+    display: flex; justify-content: center; width: 100%; margin: 10px 0;
+  }
+  .system-msg {
+    background: rgba(0,0,0,0.15); color: white; font-size: 0.72rem;
+    padding: 4px 15px; border-radius: 15px; text-align: center;
+  }
+  .continue-row {
+    display: flex; justify-content: center; width: 100%; margin: 15px 0;
+  }
+  .continue-btn {
+    background: #ffffff; color: var(--accent); border: 1px solid var(--accent); 
+    padding: 8px 25px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; 
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s;
+  }
+  .continue-btn:hover { background: var(--accent); color: white; }
+  .continue-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .input-row { display:flex; gap:10px; align-items:center; }
+  #human-input {
+    flex:1; border:1px solid var(--border); border-radius:20px; padding:8px 15px; font-size:.9rem; outline:none; background:#f5f5f5;
+  }
+  .send-btn {
+    width:35px; height:35px; border-radius:50%; background:var(--accent); border:none; color:white;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold;
+  }
+  .send-btn:disabled { background:#ccc; }
+
+  .bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; border:1px solid #ddd; }
+  .bubble th, .bubble td { border:1px solid #ddd; padding:4px 8px; font-size:.75rem; }
+  .bubble p { margin-bottom: 5px; }
+  .bubble ul, .bubble ol { padding-left: 20px; margin: 8px 0; }
+  .bubble strong { font-weight: 700; }
+  .bubble em { font-style: italic; }
+  .cursor::after { content:'▋'; animation:blink .7s infinite; font-size:.8em; opacity:.5; }
+  @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:0} }
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <div class="setup-card">
+    <div class="setup-logo">AIがレスバするだけ</div>
+    <div class="setup-instruction">
+      AI同士が全力でレスバ（論戦）します。<br>
+      議題を投下して見守ってください。
+    </div>
+    <div class="setup-form">
+      <textarea id="topic-input" placeholder="例：AIに心は宿るか？" rows="2" autofocus
+        onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); initDebate(); }"></textarea>
+      
+      <div style="display:flex; gap:10px;">
+        <div class="ms-group">
+          <span>太郎の口調</span>
+          <select class="ms-select" id="sel-style-a"></select>
+        </div>
+        <div class="ms-group">
+          <span>花子の口調</span>
+          <select class="ms-select" id="sel-style-b"></select>
+        </div>
+      </div>
+
+      <div style="display:none">
+        <select id="sel-mod"></select>
+        <select id="sel-a"></select>
+        <select id="sel-b"></select>
+      </div>
+      <button class="start-btn" onclick="initDebate()">討論を開始する</button>
+    </div>
+  </div>
+</div>
+
+<header id="header-title">AIがレスバするだけ</header>
+
+<div id="chat-container"></div>
+
+<footer id="footer">
+  <div class="input-row">
+    <input id="human-input" type="text" placeholder="指示や意見を入力（任意）" 
+      onkeydown="if(event.key==='Enter' && !this.nextElementSibling.disabled) runNextStep()"
+      oninput="toggleGoButton(this.value)">
+    <button class="send-btn" id="next-btn" onclick="runNextStep()" disabled>GO</button>
+  </div>
+</footer>
+
+<script>
+let allModels = [], history = [], topic = "", session = {}, currentPhaseIdx = 0, turnIdx = 0;
+let styleA = "standard", styleB = "standard";
+const PHASES = ['opening', 'argument', 'criticism', 'deepening', 'rebuttal', 'compromise', 'conclusion', 'summary'];
+const TURN_ORDER = ['moderator', 'A', 'B'];
+
+function toggleGoButton(val) {
+  document.getElementById('next-btn').disabled = val.trim().length === 0;
+}
+
+async function initDebate() {
+  topic = document.getElementById('topic-input').value.trim();
+  if(!topic) return;
+  session = {
+    moderator: allModels.find(m => m.id === document.getElementById('sel-mod').value),
+    debaterA:  allModels.find(m => m.id === document.getElementById('sel-a').value),
+    debaterB:  allModels.find(m => m.id === document.getElementById('sel-b').value)
+  };
+  styleA = document.getElementById('sel-style-a').value;
+  styleB = document.getElementById('sel-style-b').value;
+
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('footer').classList.add('visible');
+  document.getElementById('header-title').textContent = `議題: ${topic}`;
+  runNextStep();
+}
+
+function showWaitMsg(show) {
+  const oldMsg = document.getElementById('active-wait-msg');
+  if (oldMsg) oldMsg.remove();
+  
+  if (show) {
+    const container = document.getElementById('chat-container');
+    const row = document.createElement('div');
+    row.className = 'system-msg-row';
+    row.id = 'active-wait-msg';
+    row.innerHTML = `<div class="system-msg">あなたの応答を待っています</div>`;
+    container.appendChild(row);
+    scrollBottom();
+  }
+}
+
+function showContinueBtn(show) {
+  const oldBtn = document.getElementById('active-continue-row');
+  if (oldBtn) oldBtn.remove();
+  
+  if (show) {
+    const container = document.getElementById('chat-container');
+    const row = document.createElement('div');
+    row.className = 'continue-row';
+    row.id = 'active-continue-row';
+    row.innerHTML = `<button class="continue-btn" onclick="runNextStep()">レスバを続ける</button>`;
+    container.appendChild(row);
+    scrollBottom();
+  }
+}
+
+async function runNextStep() {
+  const btn = document.getElementById('next-btn'), input = document.getElementById('human-input');
+  const humanInput = input.value.trim(), speakerRole = TURN_ORDER[turnIdx], phase = PHASES[currentPhaseIdx];
+  
+  btn.disabled = true; 
+  input.value = "";
+  showWaitMsg(false);
+  showContinueBtn(false);
+
+  if (humanInput) {
+    const userBubble = createChatRow('user');
+    userBubble.textContent = humanInput;
+    history.push({ role: 'user', content: `[観測者] ${humanInput}` });
+    scrollBottom();
+    await new Promise(r => setTimeout(r, 600));
+  }
+
+  try {
+    const response = await fetch('/api/step', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB })
+    });
+    const reader = response.body.getReader(), decoder = new TextDecoder();
+    let currentBubble = null, fullText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = JSON.parse(line.slice(6));
+        if (data.speaker) {
+          currentBubble = createChatRow(speakerRole);
+        } else if (data.text) {
+          currentBubble.textContent += data.text;
+          currentBubble.classList.add('cursor');
+          scrollBottom();
+        } else if (data.full) {
+          fullText = data.full;
+          currentBubble.classList.remove('cursor');
+          const cleanedText = fullText.replace(/^\[.*?\]\s*/, '').replace(/^[A-Za-z]+:\s*/, '');
+          currentBubble.innerHTML = marked.parse(cleanedText);
+        }
+      }
+    }
+    history.push({ role: 'assistant', content: `[${speakerRole}] ${fullText}` });
+    
+    const lastSpeaker = speakerRole;
+    turnIdx++;
+    if (turnIdx >= TURN_ORDER.length) { turnIdx = 0; currentPhaseIdx++; }
+    if (currentPhaseIdx >= PHASES.length) { document.getElementById('footer').style.display = 'none'; return; }
+    if (PHASES[currentPhaseIdx] === 'summary') turnIdx = 0;
+    
+    if (PHASES[currentPhaseIdx] === 'opening' || lastSpeaker === 'moderator' || lastSpeaker === 'A') {
+      setTimeout(runNextStep, 1200);
+    } else {
+      showWaitMsg(true);
+      showContinueBtn(true);
+    }
+  } catch (err) { 
+    console.error(err);
+    alert("エラーが発生しました。詳細はコンソールを確認してください。"); 
+  } finally { 
+    btn.disabled = input.value.trim().length === 0;
+  }
+}
+
+function createChatRow(role) {
+  const container = document.getElementById('chat-container');
+  const row = document.createElement('div');
+  row.className = `chat-row row-${role.toLowerCase()}`;
+  
+  const name = role === 'moderator' ? '司会' : (role === 'A' ? '太郎' : (role === 'B' ? '花子' : '観測者'));
+  const initial = name.substring(0, 1);
+  row.innerHTML = `
+    <div class="avatar">${initial}</div>
+    <div class="msg-bubble-wrap">
+      <div class="speaker-name">${name}</div>
+      <div class="bubble"></div>
+    </div>`;
+  container.appendChild(row);
+  return row.querySelector('.bubble');
+}
+
+function scrollBottom() {
+  const el = document.getElementById('chat-container');
+  el.scrollTop = el.scrollHeight;
+}
+
+(async () => {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    allModels = cfg.models;
+    
+    const populateModels = (id, def) => {
+      const s = document.getElementById(id);
+      if (!s) return;
+      allModels.forEach(m => {
+        if (m.inactive) return;
+        const o = document.createElement('option');
+        o.value = m.id; o.textContent = m.label;
+        if (m.id === def) o.selected = true;
+        s.appendChild(o);
+      });
+    };
+
+    const populateStyles = (id, def) => {
+      const s = document.getElementById(id);
+      if (!s) return;
+      s.innerHTML = "";
+      for (const [key, obj] of Object.entries(cfg.styles)) {
+        const o = document.createElement('option');
+        o.value = key; o.textContent = obj.name; 
+        o.title = obj.detail;
+        if (key === def) o.selected = true;
+        s.appendChild(o);
+      }
+    };
+
+    populateModels('sel-mod', cfg.defaults.moderator);
+    populateModels('sel-a', cfg.defaults.debaterA);
+    populateModels('sel-b', cfg.defaults.debaterB);
+
+    populateStyles('sel-style-a', 'standard');
+    populateStyles('sel-style-b', 'standard');
+  } catch (e) {
+    console.error("Config load failed:", e);
+  }
+})();
+</script>
+</body>
+</html>
