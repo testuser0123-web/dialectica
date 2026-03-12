@@ -61,13 +61,20 @@
     min-height: 80px; line-height: 1.6;
   }
   .setup-form textarea:focus { border-color: var(--accent); background: white; }
-  .ms-group { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+  .ms-row { display: flex; gap: 10px; align-items: flex-end; }
+  .ms-group { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 0; }
   .ms-group span { font-size: 0.75rem; color: var(--dim); font-weight: bold; margin-left: 4px; }
+  .input-small {
+    padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: #f8f9fa;
+    font-size: 0.85rem; outline: none; width: 100%;
+  }
+  .input-small:focus { border-color: var(--accent); background: white; }
   .ms-select {
     padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: #f8f9fa;
     font-size: 0.85rem; cursor: pointer; width: 100%; outline: none;
   }
   .ms-select:focus { border-color: var(--accent); background: white; }
+  .custom-style-input { margin-top: 5px; display: none; }
   .start-btn {
     background:var(--accent); color:white; border:none; padding:0.9rem; border-radius:12px; 
     font-weight:bold; cursor:pointer; font-size: 1rem; transition: background 0.2s;
@@ -180,14 +187,27 @@
       <textarea id="topic-input" placeholder="例：AIに心は宿るか？" rows="2" autofocus
         onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); initDebate(); }"></textarea>
       
-      <div style="display:flex; gap:10px;">
+      <div class="ms-row">
         <div class="ms-group">
-          <span>太郎の口調</span>
-          <select class="ms-select" id="sel-style-a"></select>
+          <span>名前 A</span>
+          <input type="text" class="input-small" id="name-a" value="太郎">
         </div>
         <div class="ms-group">
-          <span>花子の口調</span>
-          <select class="ms-select" id="sel-style-b"></select>
+          <span>口調 A</span>
+          <select class="ms-select" id="sel-style-a" onchange="toggleCustomStyle(this, 'custom-style-a')"></select>
+          <input type="text" class="input-small custom-style-input" id="custom-style-a" placeholder="例：〜であります">
+        </div>
+      </div>
+
+      <div class="ms-row">
+        <div class="ms-group">
+          <span>名前 B</span>
+          <input type="text" class="input-small" id="name-b" value="花子">
+        </div>
+        <div class="ms-group">
+          <span>口調 B</span>
+          <select class="ms-select" id="sel-style-b" onchange="toggleCustomStyle(this, 'custom-style-b')"></select>
+          <input type="text" class="input-small custom-style-input" id="custom-style-b" placeholder="例：ギャル風に">
         </div>
       </div>
 
@@ -216,7 +236,7 @@
 
 <script>
 let allModels = [], history = [], topic = "", session = {}, currentPhaseIdx = 0, turnIdx = 0;
-let styleA = "standard", styleB = "standard";
+let styleA = "standard", styleB = "standard", nameA = "太郎", nameB = "花子";
 const PHASES = ['opening', 'argument', 'criticism', 'deepening', 'rebuttal', 'compromise', 'conclusion', 'summary'];
 const TURN_ORDER = ['moderator', 'A', 'B'];
 
@@ -224,16 +244,30 @@ function toggleGoButton(val) {
   document.getElementById('next-btn').disabled = val.trim().length === 0;
 }
 
+function toggleCustomStyle(select, customId) {
+  const customInput = document.getElementById(customId);
+  customInput.style.display = select.value === 'custom' ? 'block' : 'none';
+  if (select.value === 'custom') customInput.focus();
+}
+
 async function initDebate() {
   topic = document.getElementById('topic-input').value.trim();
   if(!topic) return;
+  
+  nameA = document.getElementById('name-a').value.trim() || "太郎";
+  nameB = document.getElementById('name-b').value.trim() || "花子";
+  
+  const selStyleA = document.getElementById('sel-style-a').value;
+  styleA = selStyleA === 'custom' ? document.getElementById('custom-style-a').value.trim() : selStyleA;
+  
+  const selStyleB = document.getElementById('sel-style-b').value;
+  styleB = selStyleB === 'custom' ? document.getElementById('custom-style-b').value.trim() : selStyleB;
+
   session = {
     moderator: allModels.find(m => m.id === document.getElementById('sel-mod').value),
     debaterA:  allModels.find(m => m.id === document.getElementById('sel-a').value),
     debaterB:  allModels.find(m => m.id === document.getElementById('sel-b').value)
   };
-  styleA = document.getElementById('sel-style-a').value;
-  styleB = document.getElementById('sel-style-b').value;
 
   document.getElementById('setup').style.display = 'none';
   document.getElementById('footer').classList.add('visible');
@@ -292,7 +326,7 @@ async function runNextStep() {
     const response = await fetch('/api/step', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB })
+      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB, nameA, nameB })
     });
     const reader = response.body.getReader(), decoder = new TextDecoder();
     let currentBubble = null, fullText = "";
@@ -346,7 +380,7 @@ function createChatRow(role) {
   const row = document.createElement('div');
   row.className = `chat-row row-${role.toLowerCase()}`;
   
-  const name = role === 'moderator' ? '司会' : (role === 'A' ? '太郎' : (role === 'B' ? '花子' : '観測者'));
+  const name = role === 'moderator' ? '司会' : (role === 'A' ? nameA : (role === 'B' ? nameB : '観測者'));
   const initial = name.substring(0, 1);
   row.innerHTML = `
     <div class="avatar">${initial}</div>
@@ -392,6 +426,11 @@ function scrollBottom() {
         if (key === def) o.selected = true;
         s.appendChild(o);
       }
+      // カスタム選択肢を追加
+      const customOpt = document.createElement('option');
+      customOpt.value = 'custom';
+      customOpt.textContent = 'カスタム...';
+      s.appendChild(customOpt);
     };
 
     populateModels('sel-mod', cfg.defaults.moderator);

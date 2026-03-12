@@ -113,7 +113,7 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/step', async (req, res) => {
-  const { role, topic, history, session, humanInput, styleA, styleB } = req.body;
+  const { role, topic, history, session, humanInput, styleA, styleB, nameA = "太郎", nameB = "花子" } = req.body;
   res.setHeader('Content-Type', 'text/event-stream');
   const sseWrite = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
@@ -121,15 +121,13 @@ app.post('/api/step', async (req, res) => {
     const isModerator = role === 'moderator';
     const cfg = isModerator ? session.moderator : (role === 'A' ? session.debaterA : session.debaterB);
     const speakerId = isModerator ? 'moderator' : (role === 'A' ? 'debaterA' : 'debaterB');
-    const nameA = "太郎";
-    const nameB = "花子";
 
     let systemPrompt = '';
     let instruction = '';
 
     const commonConstraints = `
-- **発言の冒頭に "[太郎]" や "[司会]"、"[A]" などの名前や識別子を絶対に付けないでください。** 本文のみを出力してください。
-- 司会のことは必ず「司会」と呼んでください（"Moderator" とは呼ばない）。
+- **発言の冒頭に名前や識別子（[${nameA}]など）を絶対に付けないでください。** 本文のみを出力してください。
+- 司会のことは必ず「司会」と呼んでください。
 - 観測者（ユーザー）に質問を投げかけることは絶対に禁止です。
 - 観測者のことを「人間」と呼ぶのはやめてください。言及する必要がある場合は「観測者」または「ご指摘」などの自然な言葉を使ってください。
 - 400文字以内で簡潔に述べてください。
@@ -148,11 +146,14 @@ app.post('/api/step', async (req, res) => {
     } else {
       const myName = role === 'A' ? nameA : nameB;
       const opponentName = role === 'A' ? nameB : nameA;
-      const myStyleDef = role === 'A' ? (STYLES[styleA] || STYLES.standard) : (STYLES[styleB] || STYLES.standard);
+      
+      // スタイル定義にある場合はそれを使用、ない場合はカスタム文字列として扱う
+      const getStyle = (s) => (STYLES[s] ? STYLES[s].detail : s);
+      const myStyle = role === 'A' ? getStyle(styleA) : getStyle(styleB);
       
       systemPrompt = `あなたは討論者・${myName}です。テーマ「${topic}」について論じます。
 - **自身の立場（賛成・反対・第三の道など）は、議論の流れや自身の論理に従って自分で決めてください。**
-- あなたの口調は「${myStyleDef.detail}」です。このキャラ設定を徹底してください。
+- あなたの口調は「${myStyle}」です。このキャラ設定を徹底してください。
 - 相手（${opponentName}）の主張に反論し、自身の主張を強化してください。${commonConstraints}`;
       instruction = `あなたの発言順です。自身の立場を明確にしつつ、口調を守って議論を継続してください。`;
     }
