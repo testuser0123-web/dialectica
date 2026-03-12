@@ -113,7 +113,12 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/step', async (req, res) => {
-  const { role, topic, history, session, humanInput, styleA, styleB, nameA = "太郎", nameB = "花子" } = req.body;
+  const { 
+    role, topic, history, session, humanInput, 
+    styleA, styleB, nameA = "太郎", nameB = "花子",
+    stanceA, stanceB 
+  } = req.body;
+  
   res.setHeader('Content-Type', 'text/event-stream');
   const sseWrite = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
@@ -138,21 +143,27 @@ app.post('/api/step', async (req, res) => {
       const phase = req.body.phase;
       systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。知的かつ公平ながら、議論の熱量を最大化させるのが役割です。討論者A（${nameA}）と討論者B（${nameB}）の激論を誘導・整理してください。${commonConstraints}`;
       
+      const stanceInfo = (stanceA || stanceB) ? `なお、現在の設定は ${nameA}: 「${stanceA || '自由'}」、${nameB}: 「${stanceB || '自由'}」となっています。` : '';
+
       if (phase === 'opening') {
-        instruction = `テーマ「${topic}」について討論を開始します。司会として短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。**${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは絶対に禁止です。** 彼らの自然な主張に任せてください。`;
+        instruction = `テーマ「${topic}」について討論を開始します。司会として短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。${stanceInfo} **${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは、あらかじめ設定されている場合を除き禁止です。** 彼らの自然な主張に任せてください。`;
       } else {
         instruction = `【フェーズ：${phase}】テーマ：${topic}\nこれまでの議論を整理・挑発し、次のステップへ誘導してください。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}`;
       }
     } else {
       const myName = role === 'A' ? nameA : nameB;
       const opponentName = role === 'A' ? nameB : nameA;
+      const myStance = role === 'A' ? stanceA : stanceB;
       
-      // スタイル定義にある場合はそれを使用、ない場合はカスタム文字列として扱う
       const getStyle = (s) => (STYLES[s] ? STYLES[s].detail : s);
       const myStyle = role === 'A' ? getStyle(styleA) : getStyle(styleB);
       
+      const stanceInstruction = myStance 
+        ? `- **あなたの立場は「${myStance}」です。この立場を貫いて論陣を張ってください。**`
+        : `- **自身の立場（賛成・反対・第三の道など）は、議論の流れや自身の論理に従って自分で決めてください。**`;
+
       systemPrompt = `あなたは討論者・${myName}です。テーマ「${topic}」について論じます。
-- **自身の立場（賛成・反対・第三の道など）は、議論の流れや自身の論理に従って自分で決めてください。**
+${stanceInstruction}
 - あなたの口調は「${myStyle}」です。このキャラ設定を徹底してください。
 - 相手（${opponentName}）の主張に反論し、自身の主張を強化してください。${commonConstraints}`;
       instruction = `あなたの発言順です。自身の立場を明確にしつつ、口調を守って議論を継続してください。`;

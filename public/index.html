@@ -198,6 +198,12 @@
           <input type="text" class="input-small custom-style-input" id="custom-style-a" placeholder="例：〜であります">
         </div>
       </div>
+      <div class="ms-row">
+        <div class="ms-group">
+          <span>立場 A (任意)</span>
+          <input type="text" class="input-small" id="stance-a" placeholder="例：常に賛成する">
+        </div>
+      </div>
 
       <div class="ms-row">
         <div class="ms-group">
@@ -208,6 +214,12 @@
           <span>口調 B</span>
           <select class="ms-select" id="sel-style-b" onchange="toggleCustomStyle(this, 'custom-style-b')"></select>
           <input type="text" class="input-small custom-style-input" id="custom-style-b" placeholder="例：ギャル風に">
+        </div>
+      </div>
+      <div class="ms-row">
+        <div class="ms-group">
+          <span>立場 B (任意)</span>
+          <input type="text" class="input-small" id="stance-b" placeholder="例：反対の立場をとる">
         </div>
       </div>
 
@@ -237,6 +249,7 @@
 <script>
 let allModels = [], history = [], topic = "", session = {}, currentPhaseIdx = 0, turnIdx = 0;
 let styleA = "standard", styleB = "standard", nameA = "太郎", nameB = "花子";
+let stanceA = "", stanceB = "";
 const PHASES = ['opening', 'argument', 'criticism', 'deepening', 'rebuttal', 'compromise', 'conclusion', 'summary'];
 const TURN_ORDER = ['moderator', 'A', 'B'];
 
@@ -256,6 +269,9 @@ async function initDebate() {
   
   nameA = document.getElementById('name-a').value.trim() || "太郎";
   nameB = document.getElementById('name-b').value.trim() || "花子";
+  
+  stanceA = document.getElementById('stance-a').value.trim();
+  stanceB = document.getElementById('stance-b').value.trim();
   
   const selStyleA = document.getElementById('sel-style-a').value;
   styleA = selStyleA === 'custom' ? document.getElementById('custom-style-a').value.trim() : selStyleA;
@@ -326,7 +342,7 @@ async function runNextStep() {
     const response = await fetch('/api/step', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB, nameA, nameB })
+      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB, nameA, nameB, stanceA, stanceB })
     });
     const reader = response.body.getReader(), decoder = new TextDecoder();
     let currentBubble = null, fullText = "";
