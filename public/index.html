@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AIがレスバするだけ</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12,21 +12,35 @@
     --phone-bg: #7494c0;
     --header: #ffffff;
     --border: #e0e0e0;
-    --msg-a: #ffffff;
-    --msg-b: #ffffff;
     --accent: #5c84c1;
     --text: #1c1e21;
     --dim: #65676b;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  
+  body { 
+    background:var(--bg); color:var(--text); 
+    font-family:'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; 
+    height: 100vh; height: 100dvh; 
+    display:flex; flex-direction:column; overflow:hidden; 
+  }
 
   header {
     height:56px; background:var(--header); border-bottom:1px solid var(--border);
-    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; flex-shrink:0;
     padding: 0 20px; text-align: center; color: var(--text);
     width: 100%; max-width: 600px; margin: 0 auto;
     z-index: 10;
+  }
+
+  /* ── MOBILE OPTIMIZATION ── */
+  @media (max-width: 600px) {
+    header, #chat-container, footer {
+      max-width: 100% !important;
+      border-left: none !important;
+      border-right: none !important;
+      box-shadow: none !important;
+    }
   }
 
   /* ── SETUP ── */
@@ -44,7 +58,7 @@
   .setup-form textarea {
     padding:1rem; border:1px solid var(--border); border-radius:12px; font-size:0.95rem; 
     outline:none; resize:none; background:#f8f9fa; transition: border-color 0.2s;
-    min-height: 100px; line-height: 1.6;
+    min-height: 80px; line-height: 1.6;
   }
   .setup-form textarea:focus { border-color: var(--accent); background: white; }
   .ms-group { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
@@ -73,6 +87,7 @@
   #chat-container::-webkit-scrollbar { display:none; }
 
   .chat-row { display:flex; gap:10px; width:100%; align-items:flex-start; min-width: 0; }
+  .chat-row.mod { justify-content: center; }
   
   .avatar {
     width:40px; height:40px; border-radius:15px; background:#ddd; flex-shrink:0;
@@ -320,7 +335,7 @@ async function runNextStep() {
     }
   } catch (err) { 
     console.error(err);
-    alert("エラーが発生しました。詳細はコンソールを確認してください。"); 
+    alert("エラーが発生しました。"); 
   } finally { 
     btn.disabled = input.value.trim().length === 0;
   }
