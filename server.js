@@ -166,14 +166,14 @@ app.post('/api/step', async (req, res) => {
 
     if (isModerator) {
       const phase = req.body.phase;
-      systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。知的かつ公平ながら、議論の熱量を最大化させるのが役割です。討論者A（${nameA}）と討論者B（${nameB}）の激論を誘導・整理してください。${commonConstraints}`;
+      systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。知的かつ公平ながら、議論の熱量を最大化させるのが役割です。${nameA} と ${nameB} の激論を誘導・整理してください。${commonConstraints}`;
       
       const stanceInfo = (stanceA || stanceB) ? `なお、現在の設定は ${nameA}: 「${stanceA || '自由'}」、${nameB}: 「${stanceB || '自由'}」となっています。` : '';
 
       if (phase === 'opening') {
         instruction = `テーマ「${topic}」について討論を開始します。司会として短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。${stanceInfo} **${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは、あらかじめ設定されている場合を除き禁止です。** 彼らの自然な主張に任せてください。`;
       } else {
-        instruction = `【フェーズ：${phase}】テーマ：${topic}\nこれまでの議論を整理・挑発し、次のステップへ誘導してください。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}`;
+        instruction = `【フェーズ：${phase}】テーマ：${topic}\n${nameA} と ${nameB} のこれまでの議論を整理・挑発し、次のステップへ誘導してください。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}`;
       }
     } else {
       const myName = role === 'A' ? nameA : nameB;

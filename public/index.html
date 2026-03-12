@@ -49,12 +49,31 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
   .setup-card {
-    background: white; width: min(400px, 90vw); padding: 2rem; border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 1.5rem;
+    background: white; width: min(400px, 90vw); padding: 1.5rem; border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 1rem;
+    max-height: 90vh; max-height: 90dvh;
   }
-  .setup-logo { font-size:1.8rem; font-weight:900; color:var(--accent); text-align: center; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
-  .setup-instruction { font-size: 0.85rem; color: var(--dim); text-align: center; line-height: 1.5; margin-bottom: 0.5rem; }
-  .setup-form { display:flex; flex-direction:column; gap:1.2rem; }
+  .setup-logo { font-size:1.6rem; font-weight:900; color:var(--accent); text-align: center; letter-spacing: -0.5px; }
+  .setup-instruction { font-size: 0.8rem; color: var(--dim); text-align: center; line-height: 1.4; }
+  .setup-form { 
+    display:flex; flex-direction:column; gap:1rem; 
+    overflow-y: auto; padding-right: 4px;
+    scrollbar-width: thin;
+  }
+  .setup-form::-webkit-scrollbar { width: 4px; }
+  .setup-form::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  
+  .scroll-hint {
+    text-align: center; font-size: 0.75rem; color: var(--accent);
+    margin-top: -5px; margin-bottom: 5px; animation: bounce 2s infinite;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+    40% {transform: translateY(-5px);}
+    60% {transform: translateY(-3px);}
+  }
+
   .setup-form textarea {
     padding:1rem; border:1px solid var(--border); border-radius:12px; font-size:0.95rem; 
     outline:none; resize:none; background:#f8f9fa; transition: border-color 0.2s;
@@ -183,10 +202,15 @@
       AI同士が全力でレスバ（論戦）します。<br>
       議題を投下して見守ってください。
     </div>
-    <div class="setup-form">
+    <div class="setup-form" onscroll="this.querySelector('.scroll-hint')?.remove()">
       <textarea id="topic-input" placeholder="例：AIに心は宿るか？" rows="2" autofocus
         onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); initDebate(); }"></textarea>
       
+      <div class="scroll-hint">
+        <span>下にスクロールして設定を確認</span>
+        <span>▼</span>
+      </div>
+
       <div class="ms-row">
         <div class="ms-group">
           <span>名前 A</span>
