@@ -223,6 +223,13 @@
         </div>
       </div>
 
+      <div class="ms-group" style="display:block; margin-top: 5px;">
+        <span>メッセージの最大長: <span id="char-limit-display">400</span>文字</span>
+        <input type="range" id="char-limit-range" min="100" max="1000" step="50" value="400" 
+          style="width: 100%; height: 6px; background: #ddd; border-radius: 5px; outline: none; -webkit-appearance: none;"
+          oninput="document.getElementById('char-limit-display').textContent = this.value">
+      </div>
+
       <div style="display:none">
         <select id="sel-mod"></select>
         <select id="sel-a"></select>
@@ -249,7 +256,7 @@
 <script>
 let allModels = [], history = [], topic = "", session = {}, currentPhaseIdx = 0, turnIdx = 0;
 let styleA = "standard", styleB = "standard", nameA = "太郎", nameB = "花子";
-let stanceA = "", stanceB = "";
+let stanceA = "", stanceB = "", charLimit = 400;
 const PHASES = ['opening', 'argument', 'criticism', 'deepening', 'rebuttal', 'compromise', 'conclusion', 'summary'];
 const TURN_ORDER = ['moderator', 'A', 'B'];
 
@@ -272,6 +279,8 @@ async function initDebate() {
   
   stanceA = document.getElementById('stance-a').value.trim();
   stanceB = document.getElementById('stance-b').value.trim();
+  
+  charLimit = parseInt(document.getElementById('char-limit-range').value);
   
   const selStyleA = document.getElementById('sel-style-a').value;
   styleA = selStyleA === 'custom' ? document.getElementById('custom-style-a').value.trim() : selStyleA;
@@ -342,7 +351,7 @@ async function runNextStep() {
     const response = await fetch('/api/step', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB, nameA, nameB, stanceA, stanceB })
+      body: JSON.stringify({ role: speakerRole, topic, history, session, phase, humanInput, styleA, styleB, nameA, nameB, stanceA, stanceB, charLimit })
     });
     const reader = response.body.getReader(), decoder = new TextDecoder();
     let currentBubble = null, fullText = "";

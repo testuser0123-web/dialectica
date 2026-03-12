@@ -113,31 +113,56 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/step', async (req, res) => {
+
   const { 
+
     role, topic, history, session, humanInput, 
+
     styleA, styleB, nameA = "太郎", nameB = "花子",
-    stanceA, stanceB 
+
+    stanceA, stanceB, charLimit = 400
+
   } = req.body;
-  
+
   res.setHeader('Content-Type', 'text/event-stream');
+
   const sseWrite = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
+
+
   try {
+
     const isModerator = role === 'moderator';
+
     const cfg = isModerator ? session.moderator : (role === 'A' ? session.debaterA : session.debaterB);
+
     const speakerId = isModerator ? 'moderator' : (role === 'A' ? 'debaterA' : 'debaterB');
 
+
+
     let systemPrompt = '';
+
     let instruction = '';
 
+
+
     const commonConstraints = `
+
 - **発言の冒頭に名前や識別子（[${nameA}]など）を絶対に付けないでください。** 本文のみを出力してください。
+
 - 司会のことは必ず「司会」と呼んでください。
+
 - 観測者（ユーザー）に質問を投げかけることは絶対に禁止です。
-- 観測者のことを「人間」と呼ぶのはやめてください。言及する必要がある場合は「観測者」または「ご指摘」などの自然な言葉を使ってください。
-- 400文字以内で簡潔に述べてください。
-- 必ず文章を完結させてください。
+
+- 観測者のことを「人間」と呼ぶのはやめてください。
+
+- **${charLimit}文字以内で簡潔に述べてください。** レスバなので、長文よりもキレのある短文を好みます。
+
+- **制限文字数内でも、必ず文章を完結させてください。途中で切れるのは厳禁です。**
+
 - 観測者からの介入指示がある場合は、それに従いつつ議論を深めてください。`;
+
+
 
     if (isModerator) {
       const phase = req.body.phase;
