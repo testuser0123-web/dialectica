@@ -16,15 +16,15 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPE
 // ─── AVAILABLE MODELS ────────────────────────────────────────────
 const AVAILABLE_MODELS = {
   anthropic: [
-    { id: 'claude-opus-4-6',   label: 'Claude 4.6 Opus',   tier: 'premium' },
-    { id: 'claude-sonnet-4-6', label: 'Claude 4.6 Sonnet', tier: 'balanced' },
-    { id: 'claude-haiku-4-5-20251001', label: 'Claude 4.5 Haiku', tier: 'fast' },
+    { id: 'claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet', tier: 'premium' },
+    { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet', tier: 'balanced' },
+    { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku', tier: 'fast' },
   ],
   google: [
-    { id: 'gemini-3.1-pro-preview',     label: 'Gemini 3.1 Pro',        tier: 'premium' },
-    { id: 'gemini-3.1-flash-lite-preview-03-03', label: 'Gemini 3.1 Flash-Lite', tier: 'fast' },
-    { id: 'gemini-3-flash',             label: 'Gemini 3 Flash',        tier: 'fast' },
-    { id: 'gemini-2.5-pro',             label: 'Gemini 2.5 Pro',        tier: 'balanced' },
+    { id: 'gemini-2.5-pro',             label: 'Gemini 2.5 Pro',        tier: 'premium' },
+    { id: 'gemini-2.0-flash-exp',       label: 'Gemini 2.0 Flash Exp',  tier: 'fast' },
+    { id: 'gemini-1.5-pro-latest',      label: 'Gemini 1.5 Pro',        tier: 'balanced' },
+    { id: 'gemini-1.5-flash-latest',    label: 'Gemini 1.5 Flash',      tier: 'fast' },
   ],
   openai: [
     { id: 'gpt-4o',      label: 'GPT-4o',      tier: 'premium',  inactive: true },
@@ -40,9 +40,9 @@ const ALL_MODELS = [
 ];
 
 const DEFAULTS = {
-  moderator: process.env.MODERATOR_MODEL || 'claude-haiku-4-5-20251001',
-  debaterA:  process.env.DEBATER_A_MODEL || 'claude-haiku-4-5-20251001',
-  debaterB:  process.env.DEBATER_B_MODEL || 'claude-haiku-4-5-20251001',
+  moderator: process.env.MODERATOR_MODEL || 'claude-3-5-haiku-20241022',
+  debaterA:  process.env.DEBATER_A_MODEL || 'claude-3-5-haiku-20241022',
+  debaterB:  process.env.DEBATER_B_MODEL || 'claude-3-5-haiku-20241022',
 };
 
 // ─── STYLE DEFINITIONS ───────────────────────────────────────────
