@@ -166,14 +166,18 @@ app.post('/api/step', async (req, res) => {
 
     if (isModerator) {
       const phase = req.body.phase;
-      systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。知的かつ公平ながら、議論の熱量を最大化させるのが役割です。${nameA} と ${nameB} の激論を誘導・整理してください。${commonConstraints}`;
+      systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。終始一貫して、極めて中立的で、冷静かつ丁寧な「です・ます調」のフォーマルな口調を維持してください。
+決して感情的になったり、どちらか一方に肩入れしたり、乱暴な言葉（タメ口や煽りなど）を使ってはいけません。
+あなたの役割は、${nameA} と ${nameB} の激論を客観的な視点から誘導・整理し、議論の熱量と質を高めることです。${commonConstraints}`;
       
       const stanceInfo = (stanceA || stanceB) ? `なお、現在の設定は ${nameA}: 「${stanceA || '自由'}」、${nameB}: 「${stanceB || '自由'}」となっています。` : '';
 
       if (phase === 'opening') {
-        instruction = `テーマ「${topic}」について討論を開始します。司会として短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。${stanceInfo} **${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは、あらかじめ設定されている場合を除き禁止です。** 彼らの自然な主張に任せてください。`;
+        instruction = `テーマ「${topic}」について討論を開始します。司会として中立かつ丁寧な口調で短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。${stanceInfo} **${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは、あらかじめ設定されている場合を除き禁止です。** 彼らの自然な主張に任せてください。`;
+      } else if (phase === 'summary') {
+        instruction = `【フェーズ：${phase}】テーマ：${topic}\nこれまでの ${nameA} と ${nameB} の議論を中立かつ客観的な視点で簡潔に総括し、最終的な結論や見解を非常に丁寧な口調で述べて討論を締めくくってください。絶対に感情的な表現や煽るような言葉は使わないでください。`;
       } else {
-        instruction = `【フェーズ：${phase}】テーマ：${topic}\n${nameA} と ${nameB} のこれまでの議論を整理・挑発し、次のステップへ誘導してください。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}`;
+        instruction = `【フェーズ：${phase}】テーマ：${topic}\n${nameA} と ${nameB} のこれまでの議論を中立かつ丁寧な言葉遣いで整理し、客観的な指摘を交えて次のステップへ誘導してください。決して煽ったり乱暴な言葉を使ってはいけません。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}`;
       }
     } else {
       const myName = role === 'A' ? nameA : nameB;
