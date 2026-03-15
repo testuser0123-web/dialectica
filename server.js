@@ -93,7 +93,7 @@ async function callClaudeStream(modelId, systemPrompt, messages) {
     system: systemPrompt,
     messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
     stream: true,
-    tools: [{ type: 'web_search_20260209', name: 'web_search' }]
+    tools: [{ type: 'web_search_20260209', name: 'web_search', allowed_callers: ['direct'] }]
   });
 }
 

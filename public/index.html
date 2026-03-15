@@ -363,10 +363,32 @@ function showContinueBtn(show) {
     const row = document.createElement('div');
     row.className = 'continue-row';
     row.id = 'active-continue-row';
-    row.innerHTML = `<button class="continue-btn" onclick="runNextStep()">レスバを続ける</button>`;
+
+    if (PHASES[currentPhaseIdx] === 'summary') {
+      row.innerHTML = `
+        <button class="continue-btn" style="background:var(--primary); margin-right: 10px;" onclick="acceptConclusion()">納得して総括へ</button>
+        <button class="continue-btn" style="background:var(--accent);" onclick="rejectConclusion()">納得いかない（継続）</button>
+      `;
+    } else {
+      row.innerHTML = `<button class="continue-btn" onclick="runNextStep()">レスバを続ける</button>`;
+    }
+    
     container.appendChild(row);
     scrollBottom();
   }
+}
+
+function acceptConclusion() {
+  runNextStep();
+}
+
+function rejectConclusion() {
+  // Rewind currentPhaseIdx to 3 (deepening)
+  currentPhaseIdx = 3;
+  // Inject the user prompt
+  const input = document.getElementById('human-input');
+  input.value = "まだ納得がいかない。別の角度からさらに深掘りして議論を継続せよ！";
+  runNextStep();
 }
 
 async function runNextStep() {
