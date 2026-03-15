@@ -166,11 +166,19 @@
     display: flex; justify-content: center; width: 100%; margin: 15px 0;
   }
   .continue-btn {
-    background: #ffffff; color: var(--accent); border: 1px solid var(--accent); 
-    padding: 8px 25px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; 
-    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s;
+    background: #ffffff; color: var(--accent); border: none; 
+    padding: 10px 30px; border-radius: 25px; font-size: 0.95rem; font-weight: bold; 
+    cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .continue-btn:hover { background: var(--accent); color: white; }
+  .continue-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    filter: brightness(1.1);
+  }
+  .continue-btn:active {
+    transform: translateY(0);
+  }
   .continue-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   
   .input-row { display:flex; gap:10px; align-items:center; }
@@ -366,8 +374,13 @@ function showContinueBtn(show) {
 
     if (PHASES[currentPhaseIdx] === 'summary') {
       row.innerHTML = `
-        <button class="continue-btn" style="background:var(--primary); margin-right: 10px;" onclick="acceptConclusion()">納得して総括へ</button>
-        <button class="continue-btn" style="background:var(--accent);" onclick="rejectConclusion()">納得いかない（継続）</button>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;">
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="continue-btn" style="background:var(--accent); color:white;" onclick="acceptConclusion()">納得して総括へ</button>
+            <button class="continue-btn" style="background:#f44336; color:white;" onclick="rejectConclusion()">納得いかない（継続）</button>
+          </div>
+          <div style="font-size: 0.78rem; color: rgba(255,255,255,0.7);">意見を入力して送信すると、議論が続きます</div>
+        </div>
       `;
     } else {
       row.innerHTML = `<button class="continue-btn" onclick="runNextStep()">レスバを続ける</button>`;
@@ -393,7 +406,14 @@ function rejectConclusion() {
 
 async function runNextStep() {
   const btn = document.getElementById('next-btn'), input = document.getElementById('human-input');
-  const humanInput = input.value.trim(), speakerRole = TURN_ORDER[turnIdx], phase = PHASES[currentPhaseIdx];
+  let humanInput = input.value.trim(), speakerRole = TURN_ORDER[turnIdx];
+  let phase = PHASES[currentPhaseIdx];
+
+  // If user types anything in the summary decision phase, treat it as continuing the debate.
+  if (humanInput && phase === 'summary') {
+    currentPhaseIdx = 3; // Rewind to deepening
+    phase = PHASES[currentPhaseIdx];
+  }
   
   btn.disabled = true; 
   input.value = "";
