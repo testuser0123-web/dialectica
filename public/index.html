@@ -408,7 +408,11 @@ async function runNextStep() {
     turnIdx++;
     if (turnIdx >= TURN_ORDER.length) { turnIdx = 0; currentPhaseIdx++; }
     if (currentPhaseIdx >= PHASES.length) { document.getElementById('footer').style.display = 'none'; return; }
-    if (PHASES[currentPhaseIdx] === 'summary') turnIdx = 0;
+    if (PHASES[currentPhaseIdx] === 'summary' && turnIdx > 0) {
+      turnIdx = 0;
+      currentPhaseIdx++;
+      if (currentPhaseIdx >= PHASES.length) { document.getElementById('footer').style.display = 'none'; return; }
+    }
     
     if (PHASES[currentPhaseIdx] === 'opening' || lastSpeaker === 'moderator' || lastSpeaker === 'A') {
       setTimeout(runNextStep, 1200);
