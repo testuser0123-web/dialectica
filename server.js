@@ -21,10 +21,10 @@ const AVAILABLE_MODELS = {
     { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku', tier: 'fast' },
   ],
   google: [
-    { id: 'gemini-2.5-pro',             label: 'Gemini 2.5 Pro',        tier: 'premium' },
-    { id: 'gemini-2.0-flash-exp',       label: 'Gemini 2.0 Flash Exp',  tier: 'fast' },
-    { id: 'gemini-1.5-pro-latest',      label: 'Gemini 1.5 Pro',        tier: 'balanced' },
-    { id: 'gemini-1.5-flash-latest',    label: 'Gemini 1.5 Flash',      tier: 'fast' },
+    { id: 'gemini-3.1-pro-preview',     label: 'Gemini 3.1 Pro',        tier: 'premium' },
+    { id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite', tier: 'fast' },
+    { id: 'gemini-3-flash-preview',     label: 'Gemini 3 Flash',        tier: 'fast' },
+    { id: 'gemini-2.5-pro',             label: 'Gemini 2.5 Pro',        tier: 'balanced' },
   ],
   openai: [
     { id: 'gpt-4o',      label: 'GPT-4o',      tier: 'premium',  inactive: true },
@@ -95,7 +95,9 @@ async function withRetry(fn, retries = 3, initialDelay = 5000) {
 
 async function callGeminiStream(modelId, prompt) {
   const model = genAI.getGenerativeModel({ model: modelId, generationConfig: { maxOutputTokens: 1000 } });
-  return model.generateContentStream(prompt);
+  return model.generateContentStream({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+  });
 }
 
 async function callClaudeStream(modelId, systemPrompt, messages) {
@@ -166,18 +168,21 @@ app.post('/api/step', async (req, res) => {
 
     if (isModerator) {
       const phase = req.body.phase;
-      systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。終始一貫して、極めて中立的で、冷静かつ丁寧な「です・ます調」のフォーマルな口調を維持してください。
-決して感情的になったり、どちらか一方に肩入れしたり、乱暴な言葉（タメ口や煽りなど）を使ってはいけません。
-あなたの役割は、${nameA} と ${nameB} の激論を客観的な視点から誘導・整理し、議論の熱量と質を高めることです。${commonConstraints}`;
+      systemPrompt = `あなたは「AIがレスバするだけ」というアプリの司会です。
+【絶対厳守ルール】
+1. あなたの発言はすべて「です・ます」調で終わる必要があります。いかなる理由があってもタメ口、煽り、乱暴な言葉、感情的な表現は一切使用してはいけません。
+2. 常に極めて中立的で、冷静かつ客観的な立場を維持してください。どちらかの討論者に肩入れしたり、見下したりすることは厳禁です。
+3. あなたの役割は、${nameA} と ${nameB} の激論を客観的な視点から誘導・整理し、進行することのみです。${commonConstraints}`;
       
       const stanceInfo = (stanceA || stanceB) ? `なお、現在の設定は ${nameA}: 「${stanceA || '自由'}」、${nameB}: 「${stanceB || '自由'}」となっています。` : '';
 
       if (phase === 'opening') {
-        instruction = `テーマ「${topic}」について討論を開始します。司会として中立かつ丁寧な口調で短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。${stanceInfo} **${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは、あらかじめ設定されている場合を除き禁止です。** 彼らの自然な主張に任せてください。`;
+        instruction = `テーマ「${topic}」について討論を開始します。司会として中立かつ丁寧な言葉遣いで短くテーマをアナウンスし、まずは ${nameA} に口火を切るよう促してください。${stanceInfo} **${nameA} と ${nameB} に特定の立場（賛成・反対など）を強制的に割り当てるのは、あらかじめ設定されている場合を除き禁止です。** 彼らの自然な主張に任せてください。繰り返しますが、必ず「です・ます」調の丁寧な言葉を使い、煽ったり乱暴な言葉は使わないでください。`;
       } else if (phase === 'summary') {
         instruction = `【フェーズ：${phase}】テーマ：${topic}\nこれまでの ${nameA} と ${nameB} の議論を中立かつ客観的な視点で簡潔に総括し、最終的な結論や見解を非常に丁寧な口調で述べて討論を締めくくってください。絶対に感情的な表現や煽るような言葉は使わないでください。`;
       } else {
-        instruction = `【フェーズ：${phase}】テーマ：${topic}\n${nameA} と ${nameB} のこれまでの議論を中立かつ丁寧な言葉遣いで整理し、客観的な指摘を交えて次のステップへ誘導してください。決して煽ったり乱暴な言葉を使ってはいけません。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}`;
+        instruction = `【フェーズ：${phase}】テーマ：${topic}\n${nameA} と ${nameB} のこれまでの議論を中立かつ丁寧な言葉遣いで整理し、客観的な指摘を交えて次のステップへ誘導してください。決して煽ったり乱暴な言葉を使ってはいけません。${humanInput ? `\n観測者からの指示：${humanInput}` : ''}
+あなたの発言は必ず「です・ます」調で締めくくってください。`;
       }
     } else {
       const myName = role === 'A' ? nameA : nameB;

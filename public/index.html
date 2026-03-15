@@ -254,10 +254,25 @@
           oninput="document.getElementById('char-limit-display').textContent = this.value">
       </div>
 
-      <div style="display:none">
-        <select id="sel-mod"></select>
-        <select id="sel-a"></select>
-        <select id="sel-b"></select>
+      <div class="ms-row">
+        <div class="ms-group">
+          <span>司会モデル</span>
+          <select class="ms-select" id="sel-mod"></select>
+        </div>
+      </div>
+
+      <div class="ms-row">
+        <div class="ms-group">
+          <span>AIモデル A</span>
+          <select class="ms-select" id="sel-a"></select>
+        </div>
+      </div>
+
+      <div class="ms-row">
+        <div class="ms-group">
+          <span>AIモデル B</span>
+          <select class="ms-select" id="sel-b"></select>
+        </div>
       </div>
       <button class="start-btn" onclick="initDebate()">討論を開始する</button>
     </div>
