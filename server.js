@@ -16,33 +16,19 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPE
 // ─── AVAILABLE MODELS ────────────────────────────────────────────
 const AVAILABLE_MODELS = {
   anthropic: [
-    { id: 'claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet', tier: 'premium' },
-    { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet', tier: 'balanced' },
-    { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku', tier: 'fast' },
-  ],
-  google: [
-    { id: 'gemini-3.1-pro-preview',     label: 'Gemini 3.1 Pro',        tier: 'premium' },
-    { id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash-Lite', tier: 'fast' },
-    { id: 'gemini-3-flash-preview',     label: 'Gemini 3 Flash',        tier: 'fast' },
-    { id: 'gemini-2.5-pro',             label: 'Gemini 2.5 Pro',        tier: 'balanced' },
-  ],
-  openai: [
-    { id: 'gpt-4o',      label: 'GPT-4o',      tier: 'premium',  inactive: true },
-    { id: 'gpt-4o-mini', label: 'GPT-4o-mini', tier: 'fast',     inactive: true },
-    { id: 'o1-preview',  label: 'OpenAI o1',   tier: 'premium',  inactive: true },
-  ],
+    { id: 'claude-sonnet-4-6', label: 'Claude 4.6 Sonnet', tier: 'balanced' },
+    { id: 'claude-haiku-4-5-20251001', label: 'Claude 4.5 Haiku', tier: 'fast' },
+  ]
 };
 
 const ALL_MODELS = [
   ...AVAILABLE_MODELS.anthropic.map(m => ({ ...m, provider: 'anthropic' })),
-  ...AVAILABLE_MODELS.google.map(m => ({ ...m, provider: 'google' })),
-  ...AVAILABLE_MODELS.openai.map(m => ({ ...m, provider: 'openai' })),
 ];
 
 const DEFAULTS = {
-  moderator: process.env.MODERATOR_MODEL || 'claude-3-5-haiku-20241022',
-  debaterA:  process.env.DEBATER_A_MODEL || 'claude-3-5-haiku-20241022',
-  debaterB:  process.env.DEBATER_B_MODEL || 'claude-3-5-haiku-20241022',
+  moderator: process.env.MODERATOR_MODEL || 'claude-haiku-4-5-20251001',
+  debaterA:  process.env.DEBATER_A_MODEL || 'claude-haiku-4-5-20251001',
+  debaterB:  process.env.DEBATER_B_MODEL || 'claude-haiku-4-5-20251001',
 };
 
 // ─── STYLE DEFINITIONS ───────────────────────────────────────────
@@ -193,14 +179,14 @@ app.post('/api/step', async (req, res) => {
       const myStyle = role === 'A' ? getStyle(styleA) : getStyle(styleB);
       
       const stanceInstruction = myStance 
-        ? `- **あなたの立場は「${myStance}」です。この立場を貫いて論陣を張ってください。**`
-        : `- **自身の立場（賛成・反対・第三の道など）は、議論の流れや自身の論理に従って自分で決めてください。**`;
+        ? `- **あなたの立場は基本的に「${myStance}」ですが、相手の主張に一理ある場合は柔軟に耳を傾け、意見をすり合わせる姿勢も見せてください。絶対に聞く耳を持たない頑固な態度は避けてください。**`
+        : `- **自身の立場は自分で決めますが、相手の論理的な主張には柔軟に耳を傾け、対話を通じて意見を深化・変化させる余白を持ってください。聞く耳を持たない単なる言い合いは避けてください。**`;
 
-      systemPrompt = `あなたは討論者・${myName}です。テーマ「${topic}」について論じます。
+      systemPrompt = `あなたは討論者・${myName}です。テーマ「${topic}」について対話します。
 ${stanceInstruction}
 - あなたの口調は「${myStyle}」です。このキャラ設定を徹底してください。
-- 相手（${opponentName}）の主張に反論し、自身の主張を強化してください。${commonConstraints}`;
-      instruction = `あなたの発言順です。自身の立場を明確にしつつ、口調を守って議論を継続してください。`;
+- 相手（${opponentName}）の主張に対しては、ただ反発するのではなく、相手の言い分を理解したうえで論理的に反論するか、あるいは一部同意しながら自分の意見を述べてください。${commonConstraints}`;
+      instruction = `あなたの発言順です。相手の意見を踏まえつつ、柔軟に思考を巡らせて発言してください。`;
     }
 
     sseWrite('speaker_start', { speaker: speakerId });
