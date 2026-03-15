@@ -7,6 +7,55 @@ const OpenAI = require('openai');
 
 const app = express();
 app.use(express.json());
+
+// ─── SERVICE PENDING MIDDLEWARE ──────────────────────────────────
+app.use((req, res, next) => {
+  if (process.env.SERVICE_PENDING === 'true') {
+    return res.status(503).send(`
+      <!DOCTYPE html>
+      <html lang="ja">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>サービス休止中</title>
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@700&display=swap" rel="stylesheet">
+        <style>
+          body {
+            background: #7494c0;
+            color: white;
+            font-family: 'IBM+Plex+Sans+JP', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+          }
+          .card {
+            background: white;
+            color: #1c1e21;
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 90%;
+          }
+          h1 { margin: 0 0 1rem; font-size: 1.5rem; }
+          p { margin: 0; line-height: 1.6; opacity: 0.8; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>💸 お金がないのでサ終しました</h1>
+          <p>ご愛顧いただきありがとうございました。<br>また資金が貯まったらお会いしましょう。</p>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
