@@ -93,6 +93,7 @@ async function callClaudeStream(modelId, systemPrompt, messages) {
     system: systemPrompt,
     messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
     stream: true,
+    tools: [{ type: 'web_search_20260209', name: 'web_search' }]
   });
 }
 
@@ -143,6 +144,8 @@ app.post('/api/step', async (req, res) => {
 - 観測者（ユーザー）に質問を投げかけることは絶対に禁止です。
 
 - 観測者のことを「人間」と呼ぶのはやめてください。
+
+- **もしテーマの内容が不明瞭な場合や、最新の情報が必要な場合は、提供されているインターネット検索ツール（web_search）を用いて自ら検索し、事前知識を補った上で発言してください。**
 
 - **${charLimit}文字以内で簡潔に述べてください。** レスバなので、長文よりもキレのある短文を好みます。
 
